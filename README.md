@@ -1,2 +1,1 @@
 # MobThis
-Remote mobbing tool
