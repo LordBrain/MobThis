@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/LordBrain/MobThis/client"
 	"github.com/LordBrain/MobThis/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,17 +40,12 @@ to quickly create a Cobra application.`,
 		repoURL, _ := cmd.Flags().GetString("repo")
 		var rotationTime int
 		var retro bool
+		var apiClient *client.V1
+		var mobSession utils.MobSession
+		var err error
 
-		// newMobName := strings.ReplaceAll(sillyname.GenerateStupidName(), " ", "-")
-		// fmt.Println(newMobName)
-		// fmt.Println("new called")
-
-		// Things to set for a new session
-
-		// Your name (if not set in config)
-		// Time per station
-		if !viper.IsSet("moberName") && !viper.IsSet("git.type") {
-			fmt.Println("Mober name or Git configurations not set. Run `MobThis config` first!")
+		if !viper.IsSet("moberName") && !viper.IsSet("git.type") && !viper.IsSet("mobthisaddress") {
+			fmt.Println("Configurations not set. Run `MobThis config` first!")
 			goto Done
 		}
 		if len(args) == 0 && repoURL == "" {
@@ -66,17 +62,24 @@ to quickly create a Cobra application.`,
 
 		retro = utils.AskForConfirmation("Retro after each round?")
 
-		fmt.Println("Mob Details:")
-		fmt.Println("Rotation time: ", rotationTime)
-		fmt.Println("Retro: ", retro)
-
-		//go utils.CheckAPI(state)
-		go utils.Other(messages)
+		mobSession.GitRepo = args[0]
+		mobSession.Duration = rotationTime
+		mobSession.Retro = retro
+		mobSession.Mobbers = append(mobSession.Mobbers, viper.GetString("moberName"))
+		apiClient = client.NewClient(viper.GetString("mobthisaddress"))
+		//create session
+		mobSession.SessionName, err = apiClient.CreateMob(mobSession)
+		if err != nil {
+			fmt.Println("Failed to create session")
+			goto Done
+		}
+		go apiClient.CheckAPI(mobSession, messages, state)
+		// go utils.Other(messages)
 		go utils.ReadStateChannel(messages, state)
 		go utils.ReadMessageChannel(messages)
 
 		//Listen to commands entered from the user
-		fmt.Println("Mob session started. Wait for everyone to join then type 'Start' when ready.")
+		fmt.Println("Mob session: " + mobSession.SessionName + " started. Wait for everyone to join then type 'Start' when ready.")
 		utils.ReadInput(state)
 
 	Done:
