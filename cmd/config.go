@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/LordBrain/MobThis/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -57,6 +58,7 @@ git:
 
 		//Mober username
 		if viper.IsSet("moberName") {
+
 			fmt.Print("Enter Name [" + viper.GetString("moberName") + "]: ")
 
 			if scanner.Scan() {
@@ -68,10 +70,14 @@ git:
 				moberName = viper.GetString("moberName")
 			}
 		} else {
-			fmt.Print("Enter Name: ")
+			githubUsername, _ := utils.GitUsername()
+			fmt.Print("Enter Name [" + githubUsername + "]: ")
 			if scanner.Scan() {
 				line := scanner.Text()
 				moberName = line
+			}
+			if moberName == "" {
+				moberName = githubUsername
 			}
 		}
 		//Set it in viper
@@ -91,7 +97,7 @@ git:
 		//Set it in viper
 		viper.Set("codePath", codePath)
 
-		//Path to store the code being worked on
+		//Mobthis API Address
 		if viper.IsSet("mobthisAddress") {
 			fmt.Print("MobThis API Host [" + viper.GetString("mobthisAddress") + "]: ")
 			fmt.Scanln(&mobthisAddress)
@@ -161,8 +167,12 @@ git:
 				}
 
 			} else {
-				fmt.Print("Git username: ")
+				githubUsername, _ := utils.GitUsername()
+				fmt.Print("Git username [" + githubUsername + "]: ")
 				fmt.Scanln(&gitUsername)
+				if gitUsername == "" {
+					gitUsername = githubUsername
+				}
 
 			}
 			//Set it in viper

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -32,32 +33,36 @@ func NewClient(mobthisURL string) *V1 {
 	return c
 }
 
-func (client *V1) CreateMob(mobDetails utils.MobSession) (string, error) {
+func (client *V1) CreateMob(mobDetails utils.NewMobSession) (utils.MobSession, error) {
 	//Create a new mob session
-	rel := &url.URL{Path: "/v1/mob"}
+	var session utils.MobSession
+	rel := &url.URL{Scheme: "http", Path: "/v1/mob"}
 	u := client.BaseURL.ResolveReference(rel)
 
+	fmt.Println(client.BaseURL.String())
 	mob, err := json.Marshal(mobDetails)
 	if err != nil {
-		return "", errors.New("error marshaling mob")
+		return session, errors.New("error marshaling mob")
 	}
 
 	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(mob))
 	if err != nil {
-		return "", err
+		return session, err
 	}
 
 	q := req.URL.Query()
 
 	req.Header.Set("Content-Type", "application/json")
 	req.URL.RawQuery = q.Encode()
-	session, err := commonHTTP(req)
+	session, err = commonHTTP(req)
+
 	if err != nil {
-		return "", errors.New("failed creating session")
+		fmt.Println(err)
+		return session, errors.New("failed creating session")
 
 	}
 
-	return session.SessionName, nil
+	return session, nil
 
 }
 

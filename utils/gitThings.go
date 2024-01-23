@@ -3,9 +3,10 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -13,6 +14,7 @@ import (
 )
 
 func GitCloneSSH(url, path, key string) error {
+
 	if url == "" || path == "" || key == "" {
 		return errors.New("Missing config value")
 	}
@@ -28,7 +30,7 @@ func GitCloneSSH(url, path, key string) error {
 
 	var publicKey *ssh.PublicKeys
 
-	sshKey, _ := ioutil.ReadFile(key)
+	sshKey, _ := os.ReadFile(key)
 	publicKey, keyError := ssh.NewPublicKeys("git", []byte(sshKey), "")
 	if keyError != nil {
 		fmt.Println("key error:", keyError)
@@ -102,4 +104,19 @@ func GitBranch() {
 	// err = r.Storer.SetReference(ref)
 	// CheckIfError(err)
 
+}
+
+// GitUsername will get the users github user.name from the global config
+func GitUsername() (string, error) {
+
+	cmd := exec.Command("git", "config", "--global", "user.name")
+	output, err := cmd.Output()
+
+	if err != nil {
+		return "", err
+	}
+
+	// Trim any leading/trailing whitespaces from the output
+	username := strings.TrimSpace(string(output))
+	return username, nil
 }

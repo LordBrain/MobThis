@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,7 +41,8 @@ to quickly create a Cobra application.`,
 		var rotationTime int
 		var retro bool
 		var apiClient *client.V1
-		var mobSession utils.MobSession
+		var mobSession utils.NewMobSession
+		var newMobSession utils.MobSession
 		var err error
 
 		if !viper.IsSet("moberName") && !viper.IsSet("git.type") && !viper.IsSet("mobthisaddress") {
@@ -56,7 +57,7 @@ to quickly create a Cobra application.`,
 		fmt.Print("Rotation time per station (minutes): ")
 		fmt.Scanln(&rotationTime)
 		if rotationTime <= 5 {
-			fmt.Println("Rotation time must be greater then 5 or not a string.")
+			fmt.Println("Rotation time must be greater then 5 minutes.")
 			goto Done
 		}
 
@@ -65,21 +66,21 @@ to quickly create a Cobra application.`,
 		mobSession.GitRepo = args[0]
 		mobSession.Duration = rotationTime
 		mobSession.Retro = retro
-		mobSession.Mobbers = append(mobSession.Mobbers, viper.GetString("moberName"))
+		mobSession.Mobber = viper.GetString("moberName")
 		apiClient = client.NewClient(viper.GetString("mobthisaddress"))
 		//create session
-		mobSession.SessionName, err = apiClient.CreateMob(mobSession)
+		newMobSession, err = apiClient.CreateMob(mobSession)
 		if err != nil {
 			fmt.Println("Failed to create session")
 			goto Done
 		}
-		go apiClient.CheckAPI(mobSession, messages, state)
+		go apiClient.CheckAPI(newMobSession, messages, state)
 		// go utils.Other(messages)
 		go utils.ReadStateChannel(messages, state)
 		go utils.ReadMessageChannel(messages)
 
 		//Listen to commands entered from the user
-		fmt.Println("Mob session: " + mobSession.SessionName + " started. Wait for everyone to join then type 'Start' when ready.")
+		fmt.Println("Mob session: " + newMobSession.SessionName + " started. Wait for everyone to join then type 'Start' when ready.")
 		utils.ReadInput(state)
 
 	Done:
